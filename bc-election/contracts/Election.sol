@@ -26,6 +26,7 @@ contract Election {
     }
 
     address public chairperson;
+    bool public initialized = false;
 
     mapping(address => Voter) public voters;
 
@@ -39,8 +40,13 @@ contract Election {
     function initCandidates(bytes32[] memory proposalNames) public {
         require(
             msg.sender == chairperson,
-            "Only chairperson initialize"
+            "Only chairperson can initialize"
         );
+        require(
+            !initialized,
+            "Already initialized"
+        );
+        initialized = true;
         for (uint i = 0; i < proposalNames.length; i++) {
             candidates.push(Candidate({name: proposalNames[i], voteCount: 0}));
         }
