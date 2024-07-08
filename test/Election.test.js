@@ -1,6 +1,7 @@
 const assert = require("assert");
 const ganache = require("ganache");
 const { Web3 } = require("web3");
+const ethers = require("ethers");
 const web3 = new Web3(ganache.provider());
 
 const { abi, evm } = require("../bc-election/compile");
@@ -8,10 +9,10 @@ const { abi, evm } = require("../bc-election/compile");
 let election;
 let accounts;
 
-let biden =
-  "0x4a6f6520426964656e0000000000000000000000000000000000000000000000";
-let trump =
-  "0x446f6e616c64205472756d700000000000000000000000000000000000000000";
+let biden = ethers.encodeBytes32String("Joe Biden");
+// "0x4a6f6520426964656e0000000000000000000000000000000000000000000000";
+let trump = ethers.encodeBytes32String("Donald Trump");
+// "0x446f6e616c64205472756d700000000000000000000000000000000000000000";
 
 beforeEach(async () => {
   accounts = await web3.eth.getAccounts();
@@ -92,5 +93,69 @@ describe("Election Contract", () => {
         gas: "1000000",
       });
     } catch (error) {}
+
+    try {
+      const vote1 = await election.methods.vote(0).send({
+        from: accounts[1],
+        gas: "1000000",
+      });
+      await election.methods.vote(1).send({
+        from: accounts[2],
+        gas: "1000000",
+      });
+      await election.methods.vote(0).send({
+        from: accounts[3],
+        gas: "1000000",
+      });
+      await election.methods.vote(0).send({
+        from: accounts[4],
+        gas: "1000000",
+      });
+    } catch (error) {
+      assert(error);
+    }
+
+    try {
+      const winner = await election.methods.winningCandidate().send({
+        from: accounts[0],
+        gas: "1000000",
+      });
+      // console.log("winner: ", winner);
+    } catch (error) {
+      assert(error);
+    }
+
+    try {
+      await election.methods.vote(0).send({
+        from: accounts[1],
+        gas: "1000000",
+      });
+      await election.methods.vote(1).send({
+        from: accounts[2],
+        gas: "1000000",
+      });
+      await election.methods.vote(0).send({
+        from: accounts[3],
+        gas: "1000000",
+      });
+      await election.methods.vote(0).send({
+        from: accounts[4],
+        gas: "1000000",
+      });
+    } catch (error) {
+      assert(error);
+    }
+
+    try {
+      const winnerName = await election.methods.winnerName().call({
+        from: accounts[4],
+        gas: "1000000",
+      });
+      // console.log("winnerName: ", ethers.decodeBytes32String(winnerName));
+      assert.equal("Joe Biden", ethers.decodeBytes32String(winnerName));
+
+    } catch (error) {
+      assert(error);
+    }
   });
 });
