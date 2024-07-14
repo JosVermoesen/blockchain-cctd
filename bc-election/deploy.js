@@ -28,3 +28,4 @@ const deploy = async () => {
 deploy();
 
 // 0x80639F8EA1e0A6da4E2Edc53473089DB98978b60 - contract address 2024-07-08
+// 0xad6C120F1aFe8Ffda1f1F7B033C67A80947ffFD4 - contract address 2024-07-13

@@ -17,10 +17,11 @@ let nameTrump = ethers.encodeBytes32String("Donald Trump");
 // https://www.shorturl.at/
 //'https://blockchain-election.vsoft.be/images/Joe_Biden.jpg'
 // https://shorturl.at/hvfax
-let imgageBiden = ethers.encodeBytes32String("https://shorturl.at/hvfax");
+let imageBiden = ethers.encodeBytes32String("https://shorturl.at/hvfax");
 //'https://blockchain-election.vsoft.be/images/Donald_Trump.jpg'
 // https://shorturl.at/RjMHq
-let imgageTrump = ethers.encodeBytes32String("https://shorturl.at/RjMHq");
+let shortUrlTrump = "https://shorturl.at/RjMHq";
+let imageTrump = ethers.encodeBytes32String("https://shorturl.at/RjMHq");
 
 beforeEach(async () => {
   accounts = await web3.eth.getAccounts();
@@ -32,7 +33,7 @@ beforeEach(async () => {
       })
       .send({
         from: accounts[0],
-        gas: "1300000",
+        gas: "1500000",
       });
   } catch (error) {
     console.log("error: ", error);
@@ -51,7 +52,7 @@ describe("Election Contract", () => {
   it("only chairperson can initialize", async () => {
     try {
       await election.methods
-        .initCandidates([nameBiden, nameTrump], [imgageBiden, imgageTrump])
+        .initCandidates([nameBiden, nameTrump], [imageBiden, imageTrump])
         .send({
           from: accounts[1],
           gas: "1300000",
@@ -64,7 +65,7 @@ describe("Election Contract", () => {
   it("chairperson can initialize only once", async () => {
     try {
       await election.methods
-        .initCandidates([nameBiden, nameTrump], [imgageBiden, imgageTrump])
+        .initCandidates([nameBiden, nameTrump], [imageBiden, imageTrump])
         .send({
           from: accounts[0],
           gas: "1300000",
@@ -73,7 +74,7 @@ describe("Election Contract", () => {
 
     try {
       await election.methods
-        .initCandidates([nameBiden, nameTrump], [imgageBiden, imgageTrump])
+        .initCandidates([nameBiden, nameTrump], [imageBiden, imageTrump])
         .send({
           from: accounts[0],
           gas: "1300000",
@@ -86,29 +87,29 @@ describe("Election Contract", () => {
   it("let chairperson give right to voters", async () => {
     try {
       await election.methods
-        .initCandidates([nameBiden, nameTrump], [imgageBiden, imgageTrump])
+        .initCandidates([nameBiden, nameTrump], [imageBiden, imageTrump])
         .send({
           from: accounts[0],
           gas: "1300000",
         });
-
-      await election.methods.giveRightToVote(accounts[1]).send({
-        from: accounts[0],
-        gas: "1000000",
-      });
-      await election.methods.giveRightToVote(accounts[2]).send({
-        from: accounts[0],
-        gas: "1000000",
-      });
-      await election.methods.giveRightToVote(accounts[3]).send({
-        from: accounts[0],
-        gas: "1000000",
-      });
-      await election.methods.giveRightToVote(accounts[4]).send({
-        from: accounts[0],
-        gas: "1000000",
-      });
     } catch (error) {}
+
+    await election.methods.giveRightToVote(accounts[1]).send({
+      from: accounts[0],
+      gas: "1000000",
+    });
+    await election.methods.giveRightToVote(accounts[2]).send({
+      from: accounts[0],
+      gas: "1000000",
+    });
+    await election.methods.giveRightToVote(accounts[3]).send({
+      from: accounts[0],
+      gas: "1000000",
+    });
+    await election.methods.giveRightToVote(accounts[4]).send({
+      from: accounts[0],
+      gas: "1000000",
+    });
 
     try {
       const vote1 = await election.methods.vote(0).send({
@@ -147,6 +148,16 @@ describe("Election Contract", () => {
     }
 
     try {
+      const count = await election.methods.candidateVotes(0).call();
+      assert.equal(1, count);
+
+      const count2 = await election.methods.candidateVotes(1).call();
+      assert.equal(3, count2);
+    } catch (error) {
+      console.log("error: ", error);
+    }
+
+    try {
       const winner = await election.methods.winningCandidate().send({
         from: accounts[0],
         gas: "1000000",
@@ -179,21 +190,32 @@ describe("Election Contract", () => {
     }
 
     try {
-      const count = await election.methods.candidatesCount().call();
+      count = await election.methods.candidatesCount().call();
       assert.equal(2, count);
     } catch (error) {
       assert(error);
     }
 
+    for (p = 0; p < count; p++) {
+      try {
+        const candidate = await election.methods.getCandidate(p).call();
+        const candidateName = candidate[1];
+        const candidateImage = candidate[2];
+
+        console.log(ethers.decodeBytes32String(candidateName));
+        console.log(ethers.decodeBytes32String(candidateImage));
+      } catch (error) {
+        console.log("error: ", error);
+      }
+    }
+
     try {
-      const candidate = await election.methods.getCandidate(1).call();
-      const candidateImage = candidate[2];
-      console.log(
-        "candidateImage: ",
-        ethers.decodeBytes32String(candidateImage)
-      );
+      const allowed = await election.methods.allowedToVote(accounts[5]).call();
+      assert.equal(false, allowed);
+      const allowed2 = await election.methods.allowedToVote(accounts[4]).call();
+      assert.equal(true, allowed2);
     } catch (error) {
-      console.log("error: ", error);
+      console.log("error: ", error.message);
     }
   });
 });
